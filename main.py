@@ -83,16 +83,14 @@ def synthesis(args):
         raise ValueError("Overlap must be between 0 and block_size, " +
                          f"got {args.overlap}")
 
-    texture = io.decode_image(args.texture_img_path).float() / 255.0
+    print('HERE!')
+    texture = io.decode_image(args.texture_img_path)[:3].float() / 255.0
     texture = texture.to(args.device)
-    print(texture.shape)
     texture = texture.permute(1, 2, 0)
 
     # Calculate output dimensions
     h, w = texture.shape[:2]
     new_h, new_w = int(h * args.scale), int(w * args.scale)
-    print(f'{new_h=}')
-    print(f'{new_w=}')
 
     # Perform synthesis
     try:

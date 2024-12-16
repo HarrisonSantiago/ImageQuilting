@@ -1,6 +1,8 @@
 import torch
 import math
 from utils import L2OverlapDiff, minCutPatch
+import time
+from datetime import timedelta
 
 
 def randomPatch(texture, patchLength):
@@ -100,9 +102,15 @@ def quilt(texture, patchLength, numPatches, overlap, mode="cut", algorithm='dijk
         texture = texture / 255.0
 
     numPatchesHigh, numPatchesWide = numPatches
+    total_patches = numPatchesHigh * numPatchesWide
+    patches_completed = 0
+    start_time = time.time()
+
+    print(f"\nStarting texture synthesis:")
+    print(f"Total patches to generate: {total_patches} ({numPatchesHigh}x{numPatchesWide})")
+    
     h = (numPatchesHigh * patchLength) - (numPatchesHigh - 1) * overlap
     w = (numPatchesWide * patchLength) - (numPatchesWide - 1) * overlap
-
     res = torch.zeros((h, w, texture.shape[2]), device=device)
 
     for i in range(numPatchesHigh):
@@ -119,6 +127,34 @@ def quilt(texture, patchLength, numPatches, overlap, mode="cut", algorithm='dijk
                 patch = minCutPatch(patch, overlap, res, y, x, algorithm)
             
             res[y:y+patchLength, x:x+patchLength] = patch
+            
+            # Update progress
+            patches_completed += 1
+            elapsed_time = time.time() - start_time
+            avg_time_per_patch = elapsed_time / patches_completed
+            remaining_patches = total_patches - patches_completed
+            estimated_remaining = remaining_patches * avg_time_per_patch
+            
+            # Calculate progress percentage
+            progress = (patches_completed / total_patches) * 100
+            
+            # Clear previous line if not first patch
+            if patches_completed > 1:
+                print('\033[F\033[F\033[F')  # Move cursor up 3 lines
+            
+            # Print progress
+            print(f"Progress: [{patches_completed}/{total_patches}] {progress:.1f}% complete")
+            print(f"ETA: {str(timedelta(seconds=int(estimated_remaining)))}")
+            
+    total_time = time.time() - start_time
+    print(f"\nSynthesis complete!")
+    print(f"Total time: {str(timedelta(seconds=int(total_time)))}")
+     
+    return res
+
+    
+
+    
       
     return res
 
