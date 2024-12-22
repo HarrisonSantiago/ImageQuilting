@@ -2,12 +2,18 @@ import torch
 import math
 from torchvision.transforms.functional import rgb_to_grayscale, gaussian_blur
 from utils import L2OverlapDiff, minCutPatch
+from typing import Optional
 
 
-def bestCorrPatch(texture, corrTexture, patchLength, corrTarget, y, x):
+def bestCorrPatch(texture: torch.Tensor,
+                  corrTexture: torch.Tensor,
+                  patchLength: int,
+                  corrTarget: torch.Tensor,
+                  y: int,
+                  x: int):
     """
     Find the best matching patch based on correlation with target image.
-    
+
     Args:
         texture (Tensor): Source texture image of shape (H, W, C)
         corrTexture (Tensor): Grayscale version of source texture
@@ -15,7 +21,7 @@ def bestCorrPatch(texture, corrTexture, patchLength, corrTarget, y, x):
         corrTarget (Tensor): Grayscale version of target image
         y (int): Y-coordinate where patch will be placed
         x (int): X-coordinate where patch will be placed
-        
+
     Returns:
         Tensor: Best matching patch from source texture
     """
@@ -37,19 +43,19 @@ def bestCorrPatch(texture, corrTexture, patchLength, corrTarget, y, x):
     return texture[i:i+curPatchHeight, j:j+curPatchWidth]
 
 
-def bestCorrOverlapPatch(texture,
-                         corrTexture,
-                         patchLength,
-                         overlap,
-                         corrTarget,
-                         res,
-                         y,
-                         x,
-                         alpha=0.1,
-                         level=0):
+def bestCorrOverlapPatch(texture: torch.Tensor,
+                         corrTexture: torch.Tensor,
+                         patchLength: int,
+                         overlap: int,
+                         corrTarget: torch.Tensor,
+                         res: torch.Tensor,
+                         y: int,
+                         x: int,
+                         alpha: float = 0.1,
+                         level: int = 0) -> torch.Tensor:
     """
     Find the best matching patch considering both correlation and overlap.
-    
+
     Args:
         texture (Tensor): Source texture image
         corrTexture (Tensor): Grayscale version of source texture
@@ -59,14 +65,17 @@ def bestCorrOverlapPatch(texture,
         res (Tensor): Current result image being synthesized
         y (int): Y-coordinate where patch will be placed
         x (int): X-coordinate where patch will be placed
-        alpha (float, optional): Weight between overlap and correlation errors. Defaults to 0.1
-        level (int, optional): Current iteration level for hierarchical synthesis. Defaults to 0
-        
+        alpha (float, optional): Weight between overlap and correlation errors.
+        level (int, optional): Current iteration level for hierarchical
+                                synthesis.
+
     Returns:
-        Tensor: Best matching patch considering both correlation and overlap constraints
+        Tensor: Best matching patch considering both correlation and
+                overlap constraints
     """
     h, w, _ = texture.shape
-    errors = torch.zeros((h - patchLength, w - patchLength), device=texture.device)
+    errors = torch.zeros((h - patchLength, w - patchLength),
+                         device=texture.device)
 
     corrTargetPatch = corrTarget[y:y+patchLength, x:x+patchLength]
     di, dj = corrTargetPatch.shape
@@ -85,7 +94,10 @@ def bestCorrOverlapPatch(texture,
                 prevError = patch[overlap:, overlap:] - res[y+overlap:y+patchLength, x+overlap:x+patchLength]
                 prevError = torch.sum(prevError**2)
 
-            errors[i, j] = alpha * (overlapError + prevError) + (1 - alpha) * corrError
+            errors[i, j] = alpha * \
+                           (overlapError + prevError) + \
+                           (1 - alpha) * \
+                           corrError
 
     # Get indices of minimum error
     min_idx = torch.argmin(errors)
@@ -93,42 +105,44 @@ def bestCorrOverlapPatch(texture,
     return texture[i:i+di, j:j+dj]
 
 
-def transfer(texture,
-             target,
-             patchLength,
-             overlap,
-             mode="cut",
-             algorithm="dijkstra",
-             alpha=0.1,
-             level=0,
-             prior=None,
-             blur=False,
-             device=None):
+def transfer(texture: torch.Tensor,
+             target: torch.Tensor,
+             patchLength: int,
+             overlap: int,
+             mode: str = "cut",
+             algorithm: str = "dijkstra",
+             alpha: float = 0.1,
+             level: int = 0,
+             prior: Optional[torch.Tensor] = None,
+             blur: Optional[bool] = False,
+             device: Optional[str] = None) -> torch.Tensor:
     """
     Perform texture transfer from source texture to target image.
-    
+
     Args:
         texture (Tensor): Source texture image
         target (Tensor): Target image to guide synthesis
         patchLength (int): Side length of patches
         overlap (int): Width of overlapping region
-        mode (str, optional): Transfer mode - "best", "overlap", or "cut". Defaults to "cut"
-        alpha (float, optional): Weight between overlap and correlation errors. Defaults to 0.1
-        level (int, optional): Current iteration level for hierarchical synthesis. Defaults to 0
-        prior (Tensor, optional): Result from previous iteration level. Defaults to None
-        blur (bool, optional): Whether to blur correlation images. Defaults to False
+        mode (str, optional): Transfer mode - "best", "overlap", or "cut".
+        alpha (float, optional): Weight between overlap and correlation errors.
+        level (int, optional): Current iteration level for hierarchical
+                                synthesis.
+        prior (Tensor, optional): Result from previous iteration level.
+        blur (bool, optional): Whether to blur correlation images.
         device (str, optional): Device to place tensors on
-        
+
     Returns:
-        Tensor: Synthesized image combining texture appearance with target structure
+        Tensor: Synthesized image combining texture appearance with
+                target structure
     """
     if device is None:
         device = texture.device
-        
+
     # Convert to grayscale for correlation
     corrTexture = rgb_to_grayscale(texture.permute(2, 0, 1)).squeeze(0)
     corrTarget = rgb_to_grayscale(target.permute(2, 0, 1)).squeeze(0)
-    
+
     if blur:
         corrTexture = gaussian_blur(corrTexture.unsqueeze(0), kernel_size=7, sigma=3).squeeze(0)
         corrTarget = gaussian_blur(corrTarget.unsqueeze(0), kernel_size=7, sigma=3).squeeze(0)
@@ -187,35 +201,39 @@ def transfer(texture,
     return res
 
 
-def transfer_iter(texture, target, patchLength, n, device=None):
+def transfer_iter(texture: torch.Tensor,
+                  target: torch.Tensor,
+                  patchLength: int,
+                  n: int,
+                  device: Optional[str] = None) -> torch.Tensor:
     """
     Perform hierarchical texture transfer with multiple iterations.
-    
+
     Args:
         texture (Tensor): Source texture image
         target (Tensor): Target image to guide synthesis
         patchLength (int): Initial side length of patches
         n (int): Number of iterations
         device (str, optional): Device to place tensors on
-        
+
     Returns:
         Tensor: Final synthesized image after n iterations
     """
     if device is None:
         device = texture.device
-        
+
     overlap = patchLength // 6
     res = transfer(texture, target, patchLength, overlap, device=device)
-    
+
     for i in range(1, n):
         alpha = 0.1 + 0.8 * i / (n - 1)
         patchLength = patchLength * 2**i // 3**i
         print(f"Iteration {i}: alpha={alpha:.2f}, patchLength={patchLength}")
-        
+
         overlap = patchLength // 6
         if overlap == 0:
             break
-            
+
         res = transfer(texture,
                        target,
                        patchLength,

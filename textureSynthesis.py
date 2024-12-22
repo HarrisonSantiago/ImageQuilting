@@ -3,17 +3,18 @@ import math
 from utils import L2OverlapDiff, minCutPatch
 import time
 from datetime import timedelta
+from typing import Tuple
 
 
-def randomPatch(texture, patchLength):
+def randomPatch(texture: torch.Tensor,
+                patchLength: int) -> torch.Tensor:
     """
     Extract a random square patch from the input texture.
-    
+
     Args:
         texture (Tensor): Input texture image of shape (H, W, C)
         patchLength (int): Side length of the square patch to extract
-        device (str, optional): Device to place tensors on
-        
+
     Returns:
         Tensor: Random patch of shape (patchLength, patchLength, C)
     """
@@ -24,12 +25,17 @@ def randomPatch(texture, patchLength):
     return texture[i:i+patchLength, j:j+patchLength]
 
 
-def randomBestPatch(texture, patchLength, overlap, res, y, x):
+def randomBestPatch(texture: torch.Tensor,
+                    patchLength: int,
+                    overlap: int,
+                    res: torch.Tensor,
+                    y: int,
+                    x: int) -> torch.Tensor:
     """
     Find the best matching patch from the texture by comparing overlapping
     regions. Evaluates all possible patches and returns the one with minimum
     L2 difference in overlapping regions with the existing result.
-    
+
     Args:
         texture (Tensor): Input texture image
         patchLength (int): Side length of patches
@@ -37,12 +43,13 @@ def randomBestPatch(texture, patchLength, overlap, res, y, x):
         res (Tensor): Current result image being synthesized
         y (int): Y-coordinate where patch will be placed
         x (int): X-coordinate where patch will be placed
-        
+
     Returns:
         Tensor: Best matching patch of shape (patchLength, patchLength, C)
     """
     h, w, _ = texture.shape
-    errors = torch.zeros((h - patchLength, w - patchLength), device=texture.device)
+    errors = torch.zeros((h - patchLength, w - patchLength),
+                         device=texture.device)
 
     for i in range(h - patchLength):
         for j in range(w - patchLength):
@@ -50,36 +57,41 @@ def randomBestPatch(texture, patchLength, overlap, res, y, x):
             e = L2OverlapDiff(patch, patchLength, overlap, res, y, x)
             errors[i, j] = e
 
-    # Get indices of minimum error
     min_idx = torch.argmin(errors)
     i, j = min_idx // errors.shape[1], min_idx % errors.shape[1]
     return texture[i:i+patchLength, j:j+patchLength]
 
 
-def quilt(texture, patchLength, numPatches, overlap, mode="cut", algorithm='dijkstra', device=None):
+def quilt(texture: torch.Tensor,
+          patchLength: int,
+          shapeInPatches: Tuple[int, int],
+          overlap: int,
+          mode: str = "cut",
+          algorithm: str = 'dijkstra',
+          device: str = None) -> torch.Tensor:
     """
-    Synthesize a larger texture by quilting together patches from an input texture.
-    
+    Synthesize a larger texture by quilting together patches from an
+    input texture.
+
     Args:
         texture (Tensor): Input texture image
         patchLength (int): Side length of patches to use
-        numPatches (tuple): Number of patches in (height, width)
+        shapeInPatches (tuple): Number of patches in (height, width)
         overlap (int): Width of overlapping region
-        mode (str, optional): Quilting mode - "random", "best", or "cut". Defaults to "cut"
-        algorithm
-        sequence (bool, optional): If True, shows intermediate results. Defaults to False
+        mode (str, optional): Quilting mode - "random", "best", or "cut".
+        sequence (bool, optional): If True, shows intermediate results.
         device (str, optional): Device to place tensors on
-        
+
     Returns:
         Tensor: Synthesized texture image
 
     Notes:
         Implements the Efros-Freeman image quilting algorithm with three modes:
-        
+
         random: Takes random patches from the input texture and places
                 them side by side. No attempt is made to match the patches
                 with their neighbors.
-    
+
         best: Uses randomBestPatch() to find patches that match well with
               existing neighbors. For each new patch position, it
                 -Scans the entire input texture
@@ -95,20 +107,19 @@ def quilt(texture, patchLength, numPatches, overlap, mode="cut", algorithm='dijk
     """
     if device is None:
         device = texture.device
-    
-    # Ensure texture is float and normalized
+
     texture = texture.float()
     if texture.max() > 1.0:
         texture = texture / 255.0
 
-    numPatchesHigh, numPatchesWide = numPatches
+    numPatchesHigh, numPatchesWide = shapeInPatches
     total_patches = numPatchesHigh * numPatchesWide
     patches_completed = 0
     start_time = time.time()
 
-    print(f"\nStarting texture synthesis:")
-    print(f"Total patches to generate: {total_patches} ({numPatchesHigh}x{numPatchesWide})")
-    
+    print("\nStarting texture synthesis:")
+    print(f"Total patches to generate: {total_patches}")
+
     h = (numPatchesHigh * patchLength) - (numPatchesHigh - 1) * overlap
     w = (numPatchesWide * patchLength) - (numPatchesWide - 1) * overlap
     res = torch.zeros((h, w, texture.shape[2]), device=device)
@@ -121,67 +132,58 @@ def quilt(texture, patchLength, numPatches, overlap, mode="cut", algorithm='dijk
             if i == 0 and j == 0 or mode == "random":
                 patch = randomPatch(texture, patchLength)
             elif mode == "best":
-                patch = randomBestPatch(texture, patchLength, overlap, res, y, x)
+                patch = randomBestPatch(texture, patchLength, overlap,
+                                        res, y, x)
             elif mode == "cut":
-                patch = randomBestPatch(texture, patchLength, overlap, res, y, x)
+                patch = randomBestPatch(texture, patchLength, overlap,
+                                        res, y, x)
                 patch = minCutPatch(patch, overlap, res, y, x, algorithm)
-            
+
             res[y:y+patchLength, x:x+patchLength] = patch
-            
-            # Update progress
+
             patches_completed += 1
-            elapsed_time = time.time() - start_time
-            avg_time_per_patch = elapsed_time / patches_completed
-            remaining_patches = total_patches - patches_completed
-            estimated_remaining = remaining_patches * avg_time_per_patch
-            
-            # Calculate progress percentage
-            progress = (patches_completed / total_patches) * 100
-            
-            # Clear previous line if not first patch
+
             if patches_completed > 1:
                 print('\033[F\033[F\033[F')  # Move cursor up 3 lines
-            
-            # Print progress
-            print(f"Progress: [{patches_completed}/{total_patches}] {progress:.1f}% complete")
-            print(f"ETA: {str(timedelta(seconds=int(estimated_remaining)))}")
-            
+
+            print(f"Progress: [{patches_completed}/{total_patches}] complete")
+
     total_time = time.time() - start_time
-    print(f"\nSynthesis complete!")
+    print("\nSynthesis complete!")
     print(f"Total time: {str(timedelta(seconds=int(total_time)))}")
-     
-    return res
 
-    
-
-    
-      
     return res
 
 
-def synthesize(texture, patchLength, overlap, shape, mode="cut", algorithm='dijkstra', device=None):
+def synthesize(texture: torch.Tensor,
+               patchLength: int,
+               overlap: int,
+               shape: Tuple[int, int],
+               mode: str = "cut",
+               algorithm: str = 'dijkstra',
+               device: str = None) -> torch.Tensor:
     """
     Synthesize a texture of specific dimensions using image quilting.
-    
+
     Args:
         texture (Tensor): Input texture image
         patchLength (int): Side length of patches to use
         overlap (int): Width of overlapping region
         shape (tuple): Desired (height, width) of output image
-        mode (str, optional): Quilting mode - "random", "best", or "cut". Defaults to "cut"
-        algorithm
+        mode (str, optional): Quilting mode - "random", "best", or "cut".
         device (str, optional): Device to place tensors on
-        
+
     Returns:
         Tensor: Synthesized texture of requested size
-    
+
     Notes:
-        Wrapper around quilt() that calculates the required number of patches to
-        achieve the desired output dimensions, then crops the result to exact size.
+        Wrapper around quilt() that calculates the required number of
+        patches to achieve the desired output dimensions, then crops
+        the result to exact size.
     """
     if device is None:
         device = texture.device
-        
+
     h, w = shape
 
     numPatchesHigh = math.ceil((h - patchLength) / (patchLength - overlap)) + 1 or 1

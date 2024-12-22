@@ -1,8 +1,14 @@
 import torch
 import heapq
+from typing import Iterator
 
 
-def L2OverlapDiff(patch, patchLength, overlap, res, y, x):
+def L2OverlapDiff(patch: torch.Tensor,
+                  patchLength: int,
+                  overlap: int,
+                  res: torch.Tensor,
+                  y: int,
+                  x: int) -> torch.Tensor:
     """
     Calculate the L2 difference between a patch and existing overlapping
     regions using PyTorch tensors.
@@ -49,7 +55,7 @@ def minCutPath(errors, algorithm='dijkstra'):
         raise ValueError('algorithm must be one of [dijkstra, dynamic]')
 
 
-def minCutPath_dijkstra(errors):
+def minCutPath_dijkstra(errors: torch.Tensor) -> list:
     """
     Find the minimum cost path through an error matrix using
     Dijkstra's algorithm.
@@ -91,7 +97,7 @@ def minCutPath_dijkstra(errors):
                     seen.add((curDepth, nextIndex))
 
 
-def minCutPath_dynamic(errors):
+def minCutPath_dynamic(errors: torch.Tensor) -> Iterator:
     """
     Find the minimum cost path through an error matrix using
     dynamic programming with PyTorch operations.
@@ -137,7 +143,12 @@ def minCutPath_dynamic(errors):
     return map(lambda x: x - 1, reversed(minCutPath))
 
 
-def minCutPatch(patch, overlap, res, y, x, algorithm):
+def minCutPatch(patch: torch.Tensor,
+                overlap: int,
+                res: torch.Tensor,
+                y: int,
+                x: int,
+                algorithm: str) -> torch.Tensor:
     """
     Apply minimum cut optimization to blend a patch with existing content
     using PyTorch operations.
@@ -148,7 +159,7 @@ def minCutPatch(patch, overlap, res, y, x, algorithm):
         res (Tensor): Current result image being synthesized
         y (int): Y-coordinate where patch will be placed
         x (int): X-coordinate where patch will be placed
-        algorithm
+        algorithm (str): Path algorithm to use
 
     Returns:
         Tensor: Modified patch with minimum cut applied in overlap regions
