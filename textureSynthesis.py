@@ -79,7 +79,7 @@ def quilt(texture: torch.Tensor,
         shapeInPatches (tuple): Number of patches in (height, width)
         overlap (int): Width of overlapping region
         mode (str, optional): Quilting mode - "random", "best", or "cut".
-        sequence (bool, optional): If True, shows intermediate results.
+        algorithm (str): Path algorithm to use
         device (str, optional): Device to place tensors on
 
     Returns:
@@ -171,6 +171,7 @@ def synthesize(texture: torch.Tensor,
         overlap (int): Width of overlapping region
         shape (tuple): Desired (height, width) of output image
         mode (str, optional): Quilting mode - "random", "best", or "cut".
+        algorithm (str): Path algorithm to use
         device (str, optional): Device to place tensors on
 
     Returns:

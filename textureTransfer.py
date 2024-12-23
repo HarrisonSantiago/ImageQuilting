@@ -10,7 +10,7 @@ def bestCorrPatch(texture: torch.Tensor,
                   patchLength: int,
                   corrTarget: torch.Tensor,
                   y: int,
-                  x: int):
+                  x: int) -> torch.Tensor:
     """
     Find the best matching patch based on correlation with target image.
 
@@ -26,7 +26,8 @@ def bestCorrPatch(texture: torch.Tensor,
         Tensor: Best matching patch from source texture
     """
     h, w, _ = texture.shape
-    errors = torch.zeros((h - patchLength, w - patchLength), device=texture.device)
+    errors = torch.zeros((h - patchLength, w - patchLength),
+                         device=texture.device)
 
     corrTargetPatch = corrTarget[y:y+patchLength, x:x+patchLength]
     curPatchHeight, curPatchWidth = corrTargetPatch.shape
@@ -91,7 +92,8 @@ def bestCorrOverlapPatch(texture: torch.Tensor,
 
             prevError = torch.tensor(0.0, device=texture.device)
             if level > 0:
-                prevError = patch[overlap:, overlap:] - res[y+overlap:y+patchLength, x+overlap:x+patchLength]
+                prevError = patch[overlap:, overlap:] - \
+                    res[y+overlap:y+patchLength, x+overlap:x+patchLength]
                 prevError = torch.sum(prevError**2)
 
             errors[i, j] = alpha * \
@@ -125,6 +127,7 @@ def transfer(texture: torch.Tensor,
         patchLength (int): Side length of patches
         overlap (int): Width of overlapping region
         mode (str, optional): Transfer mode - "best", "overlap", or "cut".
+        algorithm (str): Path algorithm to use
         alpha (float, optional): Weight between overlap and correlation errors.
         level (int, optional): Current iteration level for hierarchical
                                 synthesis.
@@ -144,8 +147,12 @@ def transfer(texture: torch.Tensor,
     corrTarget = rgb_to_grayscale(target.permute(2, 0, 1)).squeeze(0)
 
     if blur:
-        corrTexture = gaussian_blur(corrTexture.unsqueeze(0), kernel_size=7, sigma=3).squeeze(0)
-        corrTarget = gaussian_blur(corrTarget.unsqueeze(0), kernel_size=7, sigma=3).squeeze(0)
+        corrTexture = gaussian_blur(corrTexture.unsqueeze(0),
+                                    kernel_size=7,
+                                    sigma=3).squeeze(0)
+        corrTarget = gaussian_blur(corrTarget.unsqueeze(0),
+                                   kernel_size=7,
+                                   sigma=3).squeeze(0)
 
     h, w, _ = target.shape
 
@@ -205,6 +212,8 @@ def transfer_iter(texture: torch.Tensor,
                   target: torch.Tensor,
                   patchLength: int,
                   n: int,
+                  mode: str = "cut",
+                  algorithm: str = "dijkstra",
                   device: Optional[str] = None) -> torch.Tensor:
     """
     Perform hierarchical texture transfer with multiple iterations.
@@ -214,6 +223,8 @@ def transfer_iter(texture: torch.Tensor,
         target (Tensor): Target image to guide synthesis
         patchLength (int): Initial side length of patches
         n (int): Number of iterations
+        mode (str, optional): Transfer mode - "best", "overlap", or "cut".
+        algorithm (str): Path algorithm to use
         device (str, optional): Device to place tensors on
 
     Returns:

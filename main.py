@@ -181,6 +181,8 @@ def transfer(args):
                 target=target_img,
                 patchLength=args.block_size,
                 n=args.n_steps,
+                mode=args.mode,
+                algorithm=args.algorithm,
                 device=args.device
             )
         else:
@@ -190,6 +192,7 @@ def transfer(args):
                 patchLength=args.block_size,
                 overlap=args.overlap,
                 mode=args.mode,
+                algorithm=args.algorithm,
                 alpha=args.alpha,
                 level=args.level,
                 prior=args.prior.to(args.device) if args.prior is not None else None,
