@@ -143,8 +143,8 @@ def quilt(texture: torch.Tensor,
 
             patches_completed += 1
 
-            if patches_completed > 1:
-                print('\033[F\033[F\033[F')  # Move cursor up 3 lines
+            #if patches_completed > 1:
+            #    print('\033[F\033[F\033[F')  # Move cursor up 3 lines
 
             print(f"Progress: [{patches_completed}/{total_patches}] complete")
 
