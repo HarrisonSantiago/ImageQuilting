@@ -29,4 +29,5 @@ Texture transfer is similarly simple. Name the original texture and the target i
 | Texture | Target | Transformed | Command |
 |----------|-------------|-------------|---------|
 | ![Original Image](./images/starry_night.jpg) | ![Target Image](./images/lincoln.jpg) | ![Transformed Image](results/transfer/lincoln_starry_night.png) | `python main.py --transfer --output_path .\results\transfer\lincoln_starry_night.png -i1 .\images\starry_night.jpg -i2 .\images\lincoln.jpg -b 15 -n 4` |
-| ![Original Image](path/to/original2.jpg) | ![Transformed Image](path/to/transformed2.jpg) | `./transform --grayscale input.jpg output.jpg` |
+| ![Original Image](./images/rope.png) | ![Target Image](./images/fence.png) | ![Transformed Image](./results/transfer/fence_rope.png) | `python main.py --transfer --output_path .\results\transfer\lincoln_starry_night.png -i1 .\images\rope.png -i2 .\images\fence.png -b 15 -n 5 ` |
+| ![Original Image](./images/paint.jpg) | ![Target Image](./images/drawing.png) | ![Transformed Image](./results/transfer/drawing_paint.png) | `python main.py --transfer --output_path .\results\transfer\drawing_paint.png -i1 .\images\paint.jpg -i2 .\images\drawing.png -b 15 -n 5   ` |
