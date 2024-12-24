@@ -1,6 +1,6 @@
 # ImageQuilting
 
-The Efros and Freeman Image Quilting algorithm, introduced in 2001, creates new images by stitching together small patches from a source texture in a way that preserves the visual coherence at patch boundaries. The algorithm uses dynamic programming to find an optimal seam between overlapping patches, which allows for smooth transitions and helps avoid visible artifacts that were common in earlier texture synthesis methods. This repo provides a Pytorch implementation. 
+This repo provides a Pytorch implementation of the Efros and Freeman Image Quilting algorithm, as introduced in 2001. From a high level, this creates new images by stitching together small patches from a source texture in a way that preserves the visual coherence at patch boundaries.  
 
 ## Instalation
 1) `git clone https://github.com/HarrisonSantiago/ImageQuilting.git`
