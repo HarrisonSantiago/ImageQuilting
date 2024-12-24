@@ -152,10 +152,6 @@ def transfer(args):
     if args.block_size <= 0:
         raise ValueError(f"Block size must be positive, got {args.block_size}")
 
-    if hasattr(args, 'overlap') and \
-            (args.overlap < 0 or args.overlap >= args.block_size):
-        raise ValueError(f"Overlap must be between 0 and block_size, got {args.overlap}")
-
     if hasattr(args, 'alpha') and (args.alpha < 0 or args.alpha > 1):
         raise ValueError(f"Alpha must be between 0 and 1, got {args.alpha}")
 
