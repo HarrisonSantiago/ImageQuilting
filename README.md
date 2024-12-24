@@ -14,9 +14,9 @@ Texture synthesis is simple, just name the original texture and the desired imag
 
 | Original | Transformed | Command |
 |----------|-------------|---------|
-| ![Original Image](images\animal_hair.png) | ![Transformed Image](results\animal_hair_b_25_o_10_s_1p5.png) | `python.exe .\main.py --synthesis --output_path .\results\animal_hair_b_25_o_10_s_1p5.png -i1 .\images\animal_hair.png --block_size 50 --overlap 10 --scale 1.5` |
-| ![Original Image](images\circles.png) | ![Transformed Image](results\circles_b_50_o_10_s_1p5.png) | `python main.py --synthesis --output_path .\results\circles_b_35_o_5_s_1p5.png -i1 .\images\circles.png -b 35 -o 5 -s 1.5` | 
-| ![Original Image](images\wallpaper.jpeg) | ![Transformed Image](results\wallpaper_b_50_o_10_s_1p5.png) | `python main.py --synthesis --output_path .\results\wallpaper_b_50_o_10_s_1p5.png -i1 .\images\wallpaper.jpeg -b 50 -o 10 -s 1.5` | 
+| ![Original Image](./images/animal_hair.png) | ![Transformed Image](./results/animal_hair_b_25_o_10_s_1p5.png) | `python.exe .\main.py --synthesis --output_path .\results\animal_hair_b_25_o_10_s_1p5.png -i1 .\images\animal_hair.png --block_size 50 --overlap 10 --scale 1.5` |
+| ![Original Image](./images./circles.png) | ![Transformed Image](./results./circles_b_50_o_10_s_1p5.png) | `python main.py --synthesis --output_path .\results\circles_b_35_o_5_s_1p5.png -i1 .\images\circles.png -b 35 -o 5 -s 1.5` | 
+| ![Original Image](./images./wallpaper.jpeg) | ![Transformed Image](./results./wallpaper_b_50_o_10_s_1p5.png) | `python main.py --synthesis --output_path .\results\wallpaper_b_50_o_10_s_1p5.png -i1 .\images\wallpaper.jpeg -b 50 -o 10 -s 1.5` | 
 
 
 
